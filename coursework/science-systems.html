@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Leader–Follower Multi-Robot Coordination — Sangyoon Lee</title>
+<meta name="description" content="A wireless-free leader–follower behaviour for two Pololu 3pi+ robots: IR-based following, encoder odometry, IMU collision detection, and dynamic role-switching. MSc coursework, University of Bristol." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="coursework.css" />
+</head>
+<body>
+<div class="backdrop"></div>
+
+<nav>
+  <a href="../index.html" class="brand">SANGYOON<sup>®</sup></a>
+  <a href="../index.html#projects" class="back">← Back to projects</a>
+</nav>
+
+<header class="doc-hero wrap">
+  <div class="reveal in">
+    <div class="eyebrow">MSc Coursework · University of Bristol</div>
+    <h1>Leader–Follower Coordination on the Pololu 3pi+</h1>
+    <div class="report-attach">
+      <a href="reports/science-systems-report.pdf" target="_blank" rel="noopener">
+        <span class="ic">📄</span> View full report
+      </a>
+      <span class="fmt">PDF · 0.3 MB</span>
+    </div>
+    <p class="lede">
+      Two small differential-drive robots that hold a formation without any wireless link — the
+      follower tracks the leader purely from its infrared signal, the leader runs encoder odometry,
+      and an IMU-driven collision response lets the pair swap roles on contact. Embedded C++ on the
+      Pololu 3pi+ 32U4.
+    </p>
+    <div class="meta">
+      <div class="m"><div class="k">Unit</div><div class="v">SEMTM0043 · Robotic Science &amp; Systems</div></div>
+      <div class="m"><div class="k">Platform</div><div class="v">Pololu 3pi+ 32U4 (×2)</div></div>
+      <div class="m"><div class="k">Language</div><div class="v">Arduino / Embedded C++</div></div>
+      <div class="m"><div class="k">Date</div><div class="v">Dec 2025</div></div>
+    </div>
+    <div class="tags">
+      <span>Multi-Robot</span><span>Leader–Follower</span><span>IR Tracking</span>
+      <span>Encoder Odometry</span><span>IMU Collision</span><span>Embedded C++</span>
+    </div>
+  </div>
+</header>
+
+<main class="doc-body wrap">
+
+  <section class="reveal">
+    <div class="sec-num">01 / Goal</div>
+    <h2>Coordination without communication</h2>
+    <p>
+      The challenge was to make two robots behave as a coordinated pair using only their on-board
+      sensing — <strong>no radio, no shared map, no message passing</strong>. The link between them is
+      physical: the leader emits an infrared signal, the follower senses it and regulates its own motion
+      to stay behind. On top of that base behaviour, the system detects collisions from its inertial
+      sensor and dynamically <strong>swaps</strong> which robot leads, so the pair can recover and
+      continue rather than deadlock.
+    </p>
+    <ul class="tasks">
+      <li><span class="n">1</span><span><b>Leader.</b> Drive a controlled path, broadcast an IR beacon, and track its own pose by odometry.</span></li>
+      <li><span class="n">2</span><span><b>Follower.</b> Regulate distance and heading to the leader from IR alone, with two coupled proportional loops.</span></li>
+      <li><span class="n">3</span><span><b>Fault response.</b> Detect collisions on the IMU and hand off the leader role after a settling delay.</span></li>
+    </ul>
+    <p class="note">
+      Honest framing: the figures below are the implementation's <em>control constants and hardware
+      parameters</em>, not measured performance metrics — the deliverable was the working behaviour and
+      its firmware, and no benchmark numbers are claimed.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">02 / Leader</div>
+    <h2>Driving, beaconing, and odometry</h2>
+    <p>
+      The leader drives a controlled path while continuously emitting its IR signal for the follower to
+      lock onto, and estimates its own pose from wheel encoders so its motion is repeatable rather than
+      open-loop. Straight-line driving is held with a proportional correction on the encoder difference,
+      and the IR emitter runs on its own duty so the beacon and the drive loop don't interfere.
+    </p>
+    <div class="card">
+      <h3 style="margin-top:0">Collision detection</h3>
+      <p style="margin-bottom:0">
+        A contact event is declared when the IMU acceleration crosses a threshold
+        (<code>Z &gt; 500</code>, <code>Y &gt; 900</code> in raw units), gated by a
+        <code>500 ms</code> grace window so a single bump can't retrigger repeatedly. This is what
+        feeds the role-switching logic — the leader knows it has been hit before it decides to hand off.
+      </p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">03 / Follower</div>
+    <h2>Tracking the leader from IR alone</h2>
+    <p>
+      The follower runs <strong>two proportional loops at once</strong> on the infrared reading — one
+      regulating <em>distance</em> (how strong the signal is) and one regulating <em>heading</em> (the
+      left–right balance of the signal across its sensors). Combining them lets the robot both keep its
+      spacing and turn to stay pointed at the leader, from a single sensing modality.
+    </p>
+    <div class="card accent">
+      <h3 style="margin-top:0">Dual-proportional control</h3>
+      <ul>
+        <li><strong>Distance gain:</strong> <code>KP_DIST = 0.1</code> — closes the gap toward the target IR strength</li>
+        <li><strong>Turn gain:</strong> <code>KP_TURN = 0.7</code> — steers toward the side with the stronger reading</li>
+        <li><strong>Speed clamp:</strong> commanded wheel speed bounded to <code>[−30, +50]</code></li>
+        <li><strong>Signal-loss guard:</strong> below a minimum IR reading the follower stops rather than chasing noise</li>
+      </ul>
+      <p style="margin-bottom:0" class="note">
+        The turn loop is geared much harder than the distance loop (0.7 vs 0.1) — keeping the leader
+        <em>in view</em> matters more than perfect spacing, because once the bearing is lost the
+        distance signal becomes meaningless.
+      </p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">04 / Role switching</div>
+    <h2>Recovering by swapping leader and follower</h2>
+    <p>
+      When the IMU flags a collision, the pair doesn't stall — after a <code>3 s</code> settling delay
+      the robots <strong>exchange roles</strong>: the former follower takes over beaconing and driving,
+      the former leader falls in behind. The delay is deliberate, letting the physical disturbance
+      settle so the handoff happens from a known state rather than mid-impact. It turns a failure mode
+      (contact) into a defined, recoverable transition.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">05 / Platform</div>
+    <h2>Hardware &amp; firmware structure</h2>
+    <p>
+      Everything runs on the Pololu 3pi+ 32U4, a differential-drive platform, with the firmware split
+      into focused modules — encoders, kinematics/odometry, motor PWM, IR, and IMU — so each concern is
+      isolated and independently testable rather than tangled into one loop.
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Wheel diameter</td><td>32 mm</td></tr>
+          <tr><td>Wheel track (base width)</td><td>96 mm</td></tr>
+          <tr><td>Encoder resolution</td><td>360 counts / revolution</td></tr>
+          <tr><td>Drive style</td><td>Differential (two independent wheels)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">06 / Takeaways</div>
+    <h2>What I took from it</h2>
+    <ul>
+      <li>Coordination doesn't require communication — a single shared IR channel plus two proportional loops is enough to hold a formation, which is a useful reminder of how much behaviour emerges from sensing alone.</li>
+      <li>The gain split (turn ≫ distance) encodes a priority: keep the target in view first, regulate spacing second — the ordering of those loops matters more than either gain in isolation.</li>
+      <li>Designing the collision response as a <strong>defined role-switch</strong>, gated by a grace window and a settling delay, is what turns an unplanned contact into a recoverable state rather than a crash.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="doc-foot wrap">
+  <a href="../index.html#projects" class="home">← All projects</a>
+  <span class="muted">SEMTM0043 · MSc Robotics · University of Bristol</span>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    } else {
+      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  })();
+</script>
+</body>
+</html>

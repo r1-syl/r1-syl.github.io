@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Learning from Demonstration: DMP + GMR — Sangyoon Lee</title>
+<meta name="description" content="Teaching a planar robot to reproduce demonstrated motions with Dynamic Movement Primitives and Gaussian Mixture Regression, then closing the loop through kinematics and model-based control. MSc coursework, UWE Bristol." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="coursework.css" />
+</head>
+<body>
+<div class="backdrop"></div>
+
+<nav>
+  <a href="../index.html" class="brand">SANGYOON<sup>®</sup></a>
+  <a href="../index.html#projects" class="back">← Back to projects</a>
+</nav>
+
+<header class="doc-hero wrap">
+  <div class="reveal in">
+    <div class="eyebrow">MSc Coursework · UWE Bristol</div>
+    <h1>Learning from Demonstration with DMP &amp; GMR</h1>
+    <div class="report-attach">
+      <a href="reports/robot-learning-report.pdf" target="_blank" rel="noopener">
+        <span class="ic">📄</span> View full report
+      </a>
+      <span class="fmt">PDF · 2.9 MB</span>
+    </div>
+    <p class="lede">
+      Teaching a planar robot to reproduce a demonstrated motion — first encoding the trajectory with
+      Dynamic Movement Primitives, then with Gaussian Mixture Regression, and finally driving it through
+      inverse kinematics and a model-based controller in Simscape.
+    </p>
+    <div class="meta">
+      <div class="m"><div class="k">Unit</div><div class="v">UFME7R-15-M · Robot Learning for Control</div></div>
+      <div class="m"><div class="k">Tools</div><div class="v">MATLAB · Simulink · Simscape</div></div>
+      <div class="m"><div class="k">Plant</div><div class="v">2-DOF planar manipulator</div></div>
+      <div class="m"><div class="k">Date</div><div class="v">April 2026</div></div>
+    </div>
+    <div class="tags">
+      <span>Dynamic Movement Primitives</span><span>GMM / GMR</span><span>Learning from Demonstration</span>
+      <span>Inverse Kinematics</span><span>Model-based Control</span>
+    </div>
+  </div>
+</header>
+
+<main class="doc-body wrap">
+
+  <section class="reveal">
+    <div class="sec-num">01 / Goal</div>
+    <h2>Teaching a robot by example</h2>
+    <p>
+      The brief was to develop a full <strong>learning-from-demonstration</strong> pipeline for a planar
+      robot: take a set of human-style demonstrations of a 2D motion, learn a compact generative model of
+      it, and then make a simulated 2-DOF arm physically reproduce the motion. The interesting part is that
+      the same demonstrated trajectory is encoded two different ways and the encodings are compared on equal
+      terms, before the learned path is handed down through kinematics and dynamics to a Simscape robot.
+    </p>
+    <ul class="tasks">
+      <li><span class="n">1</span><span><b>Theory.</b> The canonical / transformation system of a DMP and the GMM–GMR formulation.</span></li>
+      <li><span class="n">2</span><span><b>Encoding &amp; comparison.</b> Implement a DMP, fit a GMM and regress with GMR, then compare reproduction accuracy.</span></li>
+      <li><span class="n">3</span><span><b>Kinematic simulation.</b> Analytical inverse kinematics that drive the arm along the learned Cartesian path.</span></li>
+      <li><span class="n">4</span><span><b>Dynamic simulation.</b> A model-based controller that tracks the joint trajectory on the full Simscape dynamics.</span></li>
+    </ul>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">02 / Encoding</div>
+    <h2>Two ways to encode a demonstration</h2>
+    <p>
+      A <strong>Dynamic Movement Primitive</strong> represents the motion as a stable second-order
+      attractor (the transformation system) modulated by a learned forcing term driven by a phase variable
+      (the canonical system). The forcing term is fit from the demonstrations, so the DMP can regenerate the
+      motion while remaining robust to a changed start or goal.
+    </p>
+    <p>
+      I tuned the number of basis functions by sweeping <code>K</code> and tracking reproduction RMSE:
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead><tr><th>Basis functions K</th><th>Reproduction RMSE</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>3</td><td>2.725</td><td>under-fit</td></tr>
+          <tr><td>5</td><td>1.925</td><td></td></tr>
+          <tr class="best"><td>9</td><td class="hl">1.122</td><td>chosen</td></tr>
+          <tr><td>15</td><td>1.156</td><td>no further gain</td></tr>
+          <tr><td>25</td><td>1.158</td><td>over-parameterised</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <code>K = 9</code> sits at the knee of the curve — past it, extra basis functions stop buying accuracy
+      and just add parameters. Configuration: <code>nbData = 200</code>, <code>nbDemos = 5</code>,
+      <code>nStates = 9</code>, <code>beta = 50</code>.
+    </p>
+    <p>
+      The second encoding fits a <strong>Gaussian Mixture Model</strong> over the demonstrations via EM
+      (seeded with <code>rng(42)</code> for reproducibility; the log-likelihood converges to ≈ −12,900 after
+      ~90 iterations) and reconstructs the trajectory with <strong>Gaussian Mixture Regression</strong> —
+      conditioning the joint distribution on the phase to retrieve the expected motion plus its covariance.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">03 / Comparison</div>
+    <h2>GMR vs. a least-squares baseline</h2>
+    <p>
+      Evaluating the two reconstructions against the demonstrated trajectory on the same data:
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead><tr><th>Method</th><th>Reproduction RMSE</th></tr></thead>
+        <tbody>
+          <tr><td>Locally-weighted least squares (LWLS)</td><td>1.1224</td></tr>
+          <tr class="best"><td>Gaussian Mixture Regression (GMR)</td><td class="hl">0.3745</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="big">66.6%</div><div class="lbl">lower reproduction RMSE for GMR over the LWLS baseline</div></div>
+    </div>
+    <p>
+      GMR reproduced the demonstration roughly <strong>66.6% more accurately</strong> than the
+      least-squares baseline, and — unlike a point-estimate fit — it also carries a covariance at every
+      phase, which encodes how consistent the demonstrations were at each part of the motion.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">04 / Kinematics</div>
+    <h2>Driving the arm: inverse kinematics</h2>
+    <p>
+      To make the arm follow the learned Cartesian path, I solved the inverse kinematics
+      <strong>analytically</strong> for the 2-link arm (<code>L1 = L2 = 10 m</code>). The elbow angle comes
+      from the law of cosines, <code>θ2 = atan2(√(1 − D²), D)</code>, where <code>D</code> is clamped to
+      <code>[−1, 1]</code> so numerical noise can never push the argument out of the valid range.
+    </p>
+    <div class="card accent">
+      <h3 style="margin-top:0">Avoiding branch switching</h3>
+      <p style="margin-bottom:0">
+        A 2-link arm has an "elbow-up" and an "elbow-down" solution for most targets. Flipping between
+        them mid-trajectory produces a discontinuous joint jump. By always selecting the positive
+        (elbow-up) root, the joint solution stays on a single continuous branch for the whole path —
+        no sudden reconfiguration. Tracking against the commanded motion held to the solver tolerance
+        (<code>≤ 1e-6</code>).
+      </p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">05 / Dynamics</div>
+    <h2>Tracking it on the real dynamics</h2>
+    <p>
+      The final stage closed the loop on the full Simscape dynamics with a <strong>model-based PD
+      controller</strong> using inverse-dynamics feedforward:
+    </p>
+    <p style="margin:0 0 18px"><code>τ = M(θ)θ̈_d + C(θ,θ̇)θ̇ + Kp(θ_d − θ) + Kd(θ̇_d − θ̇)</code></p>
+    <p>
+      The feedback gains were placed for a critically-damped closed loop with natural frequency
+      <code>ωn = 10 rad/s</code> and <code>ζ = 1</code>, giving <code>Kp = 100·I</code>,
+      <code>Kd = 20·I</code> and a settling time of ≈ 0.4 s. Tracking the learned joint trajectory:
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead><tr><th>Joint</th><th>RMSE (rad)</th><th>max |error| (rad)</th></tr></thead>
+        <tbody>
+          <tr><td>Joint 1</td><td class="hl">1.36e-2</td><td>2.33e-2</td></tr>
+          <tr><td>Joint 2</td><td class="hl">3.49e-3</td><td>7.00e-3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Both joints tracked the demonstrated motion with small, bounded error — the residual reflects the
+      finite bandwidth of the controller rather than a structural failure, since the inverse-dynamics
+      feedforward already cancels most of the nonlinear coupling.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">06 / Takeaways</div>
+    <h2>What I took from it</h2>
+    <ul>
+      <li>A demonstration encoding should be judged on <strong>reproduction error</strong>, not on visual plausibility — the GMR-vs-LWLS and K-sweep numbers are what justified the design choices.</li>
+      <li>GMR's covariance output is more than a number: it tells you <strong>where the demonstrations agreed</strong>, which is exactly the information a downstream controller wants.</li>
+      <li>The pipeline only works end-to-end if each stage respects the next — clamping IK inputs and locking the elbow branch is what keeps the learned path from breaking when it reaches the dynamics.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="doc-foot wrap">
+  <a href="../index.html#projects" class="home">← All projects</a>
+  <span class="muted">UFME7R · MSc Robotics · UWE Bristol</span>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    } else {
+      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# ── 배포 안전 정책: default-deny ──
+# 기본적으로 모든 최상위 항목을 제외하고, 실제 사이트 파일만 허용한다.
+# 이렇게 하면 원본 과제 폴더·CV 원본·내부 노트가 실수로 공개되지 않는다.
+/*
+
+# 허용 — 공개되는 사이트 파일만
+!/.gitignore
+!/index.html
+!/resume.pdf
+!/coursework/
+
+# coursework/ 내부에서도 원본/대용량 산출물은 제외하고 페이지·리포트만 노출
+coursework/*
+!coursework/*.html
+!coursework/coursework.css
+!coursework/reports/

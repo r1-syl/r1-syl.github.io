@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI for Robotics: HeroBot — Sangyoon Lee</title>
+<meta name="description" content="A three-part machine-learning study on the HeroBot MazeDungeon task: supervised sprite classification, unsupervised entity clustering, and reinforcement learning for maze navigation. MSc coursework, University of Bristol." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="coursework.css" />
+</head>
+<body>
+<div class="backdrop"></div>
+
+<nav>
+  <a href="../index.html" class="brand">SANGYOON<sup>®</sup></a>
+  <a href="../index.html#projects" class="back">← Back to projects</a>
+</nav>
+
+<header class="doc-hero wrap">
+  <div class="reveal in">
+    <div class="eyebrow">MSc Coursework · University of Bristol</div>
+    <h1>AI for Robotics — HeroBot MazeDungeon</h1>
+    <div class="report-attach">
+      <a href="reports/ai-robotics-herobot-report.pdf" target="_blank" rel="noopener">
+        <span class="ic">📄</span> View full report
+      </a>
+      <span class="fmt">PDF · 2.2 MB</span>
+    </div>
+    <p class="lede">
+      A three-part machine-learning study built around a game-like robot agent: classify what the agent
+      sees, discover structure in the entities it encounters, and learn to navigate a dungeon maze by
+      trial and error — each part comparing two algorithms head-to-head.
+    </p>
+    <div class="meta">
+      <div class="m"><div class="k">Unit</div><div class="v">SEMTM0016 · AI for Robotics</div></div>
+      <div class="m"><div class="k">Tools</div><div class="v">Python · NumPy · scikit-learn</div></div>
+      <div class="m"><div class="k">Scope</div><div class="v">Supervised · Unsupervised · RL</div></div>
+      <div class="m"><div class="k">Date</div><div class="v">April 2026</div></div>
+    </div>
+    <div class="tags">
+      <span>CNN</span><span>KNN + HOG</span><span>K-Means</span><span>Hierarchical Clustering</span>
+      <span>Q-Learning</span><span>SARSA</span>
+    </div>
+  </div>
+</header>
+
+<main class="doc-body wrap">
+
+  <section class="reveal">
+    <div class="sec-num">01 / Overview</div>
+    <h2>Three learning paradigms, one agent</h2>
+    <p>
+      The HeroBot task is a sandbox for the three classical branches of machine learning. Rather than
+      treat them separately, the coursework runs all three on the same agent: it has to <strong>perceive</strong>
+      its world (supervised), <strong>organise</strong> what it finds (unsupervised), and <strong>act</strong>
+      to reach a goal (reinforcement). Each part is framed as a controlled comparison between two methods so
+      the trade-offs are explicit rather than assumed.
+    </p>
+    <ul class="tasks">
+      <li><span class="n">1</span><span><b>Supervised.</b> Classify 80×80 sprite tiles into their entity class — a CNN versus a KNN built on HOG features.</span></li>
+      <li><span class="n">2</span><span><b>Unsupervised.</b> Cluster entities from a feature table — K-Means versus agglomerative hierarchical clustering.</span></li>
+      <li><span class="n">3</span><span><b>Reinforcement.</b> Learn a navigation policy on a 10×10 dungeon maze — Q-Learning versus SARSA.</span></li>
+    </ul>
+    <p class="note">Reproducibility: RANDOM_SEED = 42 throughout; the raw sensor log (dungeon_sensorstats.csv) is treated as read-only and never overwritten.</p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">02 / Supervised</div>
+    <h2>Seeing the world: sprite classification</h2>
+    <p>
+      The agent has to label 80×80-pixel sprite tiles by entity type. I implemented two contrasting
+      approaches:
+    </p>
+    <div class="card">
+      <h3 style="margin-top:0">Algorithm A — Convolutional Neural Network</h3>
+      <p style="margin-bottom:0">
+        A three-block convolutional network with batch normalisation and global average pooling, learning
+        its own features end-to-end from the raw pixels — the modern, representation-learning route.
+      </p>
+      <h3>Algorithm B — KNN on HOG features</h3>
+      <p style="margin-bottom:0">
+        A k-nearest-neighbours classifier over <strong>Histogram-of-Oriented-Gradients</strong> descriptors —
+        a lightweight, interpretable, hand-engineered-feature route that needs no training loop.
+      </p>
+    </div>
+    <p>
+      The comparison is the point: the CNN trades interpretability and compute for the ability to learn
+      features, while KNN+HOG trades capacity for transparency and speed. To make the comparison rigorous
+      I went beyond raw accuracy — using <strong>McNemar's test</strong> to check whether the two classifiers'
+      error patterns differ significantly, and <strong>expected calibration error (ECE)</strong> to ask
+      whether the CNN's confidence scores are trustworthy, not just its top-1 labels.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">03 / Unsupervised</div>
+    <h2>Organising the world: entity clustering</h2>
+    <p>
+      Given a feature table describing the entities the agent encounters, the task is to recover structure
+      with no labels. I compared <strong>K-Means</strong> (centroid-based, fast, assumes roughly spherical
+      clusters) against <strong>agglomerative hierarchical clustering</strong> (linkage-based, makes no
+      cluster-shape assumption and yields a full dendrogram).
+    </p>
+    <p>
+      Choosing the number of clusters is the hard part of unsupervised work, so I used the
+      <strong>gap statistic</strong> to select <code>k</code> in a principled way rather than by eye, and
+      assessed <strong>cluster stability</strong> across resamples to check that the discovered groups are
+      real structure and not an artefact of one particular split.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">04 / Reinforcement</div>
+    <h2>Acting in the world: maze navigation</h2>
+    <p>
+      The final part puts the agent in a 10×10 dungeon maze and asks it to learn a path to the goal from
+      reward alone. I implemented two tabular temporal-difference learners:
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead><tr><th>Method</th><th>Update style</th><th>Character</th></tr></thead>
+        <tbody>
+          <tr><td>Q-Learning</td><td>Off-policy</td><td>Learns the greedy optimum; more aggressive near hazards</td></tr>
+          <tr><td>SARSA</td><td>On-policy</td><td>Learns the policy it actually follows; more cautious</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Because reward in a sparse maze only arrives at the goal, I used <strong>potential-based reward
+      shaping</strong> (Ng et al., 1999) to densify the signal <em>without</em> changing the optimal policy —
+      the factorial structure of the shaping potential lets the agent learn faster while preserving the
+      guarantee that it is still solving the original problem. The on-policy / off-policy contrast then shows
+      up exactly where theory predicts: SARSA's learned route keeps a safer margin from penalty tiles, while
+      Q-Learning's takes the shorter, riskier line.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">05 / Takeaways</div>
+    <h2>What I took from it</h2>
+    <ul>
+      <li>"Which algorithm is better" is the wrong question — each pairing (CNN/KNN, K-Means/hierarchical, Q-Learning/SARSA) is a <strong>trade-off</strong>, and the job is to name the axis it trades on.</li>
+      <li>Top-1 accuracy alone is not enough: <strong>McNemar</strong>, <strong>ECE</strong>, the <strong>gap statistic</strong>, and <strong>stability</strong> analysis are what turn a number into a defensible claim.</li>
+      <li>Reward shaping is a safety-relevant design choice — using a <strong>potential-based</strong> form is what guarantees the densified reward still optimises the intended behaviour.</li>
+    </ul>
+    <p class="note">Headline quantitative results (accuracies, cluster scores, episode returns) are reported in the submitted coursework; this page summarises the methodology and design decisions.</p>
+  </section>
+
+</main>
+
+<footer class="doc-foot wrap">
+  <a href="../index.html#projects" class="home">← All projects</a>
+  <span class="muted">SEMTM0016 · MSc Robotics · University of Bristol</span>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    } else {
+      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  })();
+</script>
+</body>
+</html>

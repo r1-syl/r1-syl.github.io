@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Robot Kinematics &amp; Trajectory Generation — Sangyoon Lee</title>
+<meta name="description" content="Foundations of robot motion: forward and inverse kinematics for a planar arm, and a small toolkit of trajectory generators — trapezoidal, polynomial, and via-point blended profiles. MSc coursework, UWE Bristol." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="coursework.css" />
+</head>
+<body>
+<div class="backdrop"></div>
+
+<nav>
+  <a href="../index.html" class="brand">SANGYOON<sup>®</sup></a>
+  <a href="../index.html#projects" class="back">← Back to projects</a>
+</nav>
+
+<header class="doc-hero wrap">
+  <div class="reveal in">
+    <div class="eyebrow">MSc Coursework · UWE Bristol</div>
+    <h1>Robot Kinematics &amp; Trajectory Generation</h1>
+    <p class="lede">
+      The foundational unit of the MSc — forward and inverse kinematics, Jacobians, dynamics, and
+      motion planning. Alongside the taught material I built a small, reusable toolkit of trajectory
+      generators and a planar inverse-kinematics solver, the tangible artefacts I took out of the unit.
+    </p>
+    <div class="meta">
+      <div class="m"><div class="k">Unit</div><div class="v">UFMF4X-15-M · Robotics Fundamentals</div></div>
+      <div class="m"><div class="k">Tools</div><div class="v">Python · NumPy · Matplotlib · MATLAB</div></div>
+      <div class="m"><div class="k">Scope</div><div class="v">Kinematics · Trajectory planning</div></div>
+      <div class="m"><div class="k">Date</div><div class="v">Jan 2026</div></div>
+    </div>
+    <div class="tags">
+      <span>Inverse Kinematics</span><span>Trapezoidal / LSPB</span><span>Polynomial Trajectories</span>
+      <span>Via-Point Blending</span><span>Jacobians</span>
+    </div>
+  </div>
+</header>
+
+<main class="doc-body wrap">
+
+  <section class="reveal">
+    <div class="sec-num">01 / Scope</div>
+    <h2>What the unit covered</h2>
+    <p>
+      This is the groundwork unit that everything else in the MSc builds on: rigid-body transforms and
+      the forward-kinematics chain, the <strong>Jacobian</strong> and its role in velocity mapping and
+      singularities, <strong>inverse kinematics</strong>, an introduction to manipulator
+      <strong>dynamics</strong>, and the <strong>trajectory generation</strong> that turns a desired
+      path into a time-parameterised motion. The unit's assessment was an exam plus a written
+      coursework; this page focuses on the implementation work I did to make those ideas concrete,
+      not on the write-up itself.
+    </p>
+    <p class="note">
+      Honest framing: the figures below are <em>configuration parameters</em> of deterministic
+      trajectory/IK routines, not measured performance results — there is no benchmark to report here,
+      and none is implied.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">02 / Trajectory generation</div>
+    <h2>A small toolkit of motion profiles</h2>
+    <p>
+      The core of the practical work was implementing the standard families of joint-space trajectory
+      generators from scratch in Python and plotting their position, velocity, and acceleration
+      profiles to see the trade-offs first-hand:
+    </p>
+    <ul class="tasks">
+      <li><span class="n">1</span><span><b>Trapezoidal / LSPB.</b> Linear-segment-with-parabolic-blends — constant-velocity cruise bracketed by constant-acceleration ramps, the workhorse of point-to-point motion.</span></li>
+      <li><span class="n">2</span><span><b>Cubic polynomial.</b> Third-order rest-to-rest motion with matched position and velocity boundary conditions.</span></li>
+      <li><span class="n">3</span><span><b>Quintic polynomial.</b> Fifth-order motion that additionally pins the <em>acceleration</em> endpoints to zero, for a smoother, jerk-limited start and stop.</span></li>
+      <li><span class="n">4</span><span><b>Via-point blending.</b> Stitching multiple waypoints into one continuous trajectory with parabolic blends through each via-point.</span></li>
+    </ul>
+    <div class="card accent">
+      <h3 style="margin-top:0">Worked via-point example</h3>
+      <ul>
+        <li><strong>Waypoints:</strong> <code>[0, 40, 20, 30]°</code> across three segments</li>
+        <li><strong>Segment durations:</strong> <code>[5, 10, 5] s</code>, blended over <code>2.0 s</code> at each via-point</li>
+        <li><strong>Acceleration limit:</strong> <code>a_max = 6 °/s²</code></li>
+        <li><strong>Integration step:</strong> <code>dt = 0.001 s</code></li>
+      </ul>
+      <p style="margin-bottom:0" class="note">
+        The blend duration is what trades positional fidelity at the waypoint against velocity
+        continuity — a longer blend rounds the corner more but pulls the path further inside the
+        via-point.
+      </p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">03 / Inverse kinematics</div>
+    <h2>Solving a planar 2-DOF arm</h2>
+    <p>
+      To close the loop from Cartesian target back to joint angles, I implemented an analytical inverse
+      kinematics solver for a 2-link planar manipulator in MATLAB (<code>l₁ = l₂ = 0.1 m</code>). The
+      elbow angle follows from the law of cosines, with the cosine argument clamped to
+      <code>[−1, 1]</code> so points just outside the reachable workspace (radius <code>0.2 m</code>)
+      degrade gracefully instead of producing a complex result.
+    </p>
+    <p>
+      A 2-link arm admits two solutions — elbow-up and elbow-down — for almost every reachable point.
+      Surfacing both, and being explicit about which branch the solver returns, is the part of the
+      exercise that connects the algebra back to a physical configuration the arm can actually strike.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">04 / Takeaways</div>
+    <h2>What I took from it</h2>
+    <ul>
+      <li>Trajectory generation is where path planning meets the actuator: a cubic and a quintic reach the same endpoints, but only the quintic keeps acceleration continuous — which is what the motor and the structure actually feel.</li>
+      <li>The blend duration on a via-point trajectory is a deliberate fidelity-vs-smoothness dial, not a detail — seeing the position/velocity/acceleration curves side by side is what makes that trade-off legible.</li>
+      <li>Clamping and branch selection in the IK solver are small but essential: they are what keep the foundational maths from breaking the moment a target sits at the edge of the workspace.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="doc-foot wrap">
+  <a href="../index.html#projects" class="home">← All projects</a>
+  <span class="muted">UFMF4X · MSc Robotics · UWE Bristol</span>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    } else {
+      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  })();
+</script>
+</body>
+</html>

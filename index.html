@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sangyoon Lee — Robotics Researcher</title>
+<meta name="description" content="Sangyoon Lee — researching and developing human-centered robotic systems with a focus on HRI, BCI, and telepresence." />
+<meta name="author" content="Sangyoon Lee" />
+
+<!-- Open Graph -->
+<meta property="og:title" content="Sangyoon Lee — Robotics Researcher" />
+<meta property="og:description" content="Human-centered robotic systems · HRI · BCI · Telepresence" />
+<meta property="og:type" content="website" />
+<!-- TODO(og:image): 1200×630 미리보기 이미지 추가 시 아래 주석 해제 -->
+<!-- <meta property="og:image" content="og-cover.png" /> -->
+
+<!-- Inline SVG favicon (별도 파일 불필요) -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2307080d'/><text x='16' y='23' font-family='monospace' font-size='20' font-weight='700' fill='%234dd6e8' text-anchor='middle'>S</text></svg>" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --bg:        #07080d;
+    --bg-soft:   #0d0f17;
+    --surface:   #121521;
+    --line:      rgba(255,255,255,0.08);
+    --text:      #e6e8ef;
+    --text-dim:  #9aa0b4;
+    --text-faint:#5b6076;
+    --accent:    #4dd6e8;   /* electric teal */
+    --accent-2:  #7c6cff;   /* violet */
+    --accent-glow: rgba(77,214,232,0.35);
+    --max: 1180px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent); color: #04050a; }
+
+  /* ---------- layout ---------- */
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+  section { position: relative; }
+
+  /* ---------- 3D hero canvas ---------- */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    display: block;
+  }
+  .scrim {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background:
+      radial-gradient(120% 80% at 70% 10%, transparent 0%, var(--bg) 75%),
+      linear-gradient(180deg, transparent 40%, var(--bg) 92%);
+  }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 28px;
+    backdrop-filter: blur(8px);
+    transition: background .4s var(--ease), border-color .4s var(--ease);
+    border-bottom: 1px solid transparent;
+  }
+  nav.scrolled {
+    background: rgba(7,8,13,0.7);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 1.05rem; letter-spacing: .04em;
+  }
+  .brand sup { color: var(--accent); font-size: .6em; }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a {
+    font-size: .82rem; color: var(--text-dim); letter-spacing: .02em;
+    transition: color .25s var(--ease); position: relative;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.cta {
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 7px 16px; border-radius: 100px; font-weight: 500;
+  }
+  .nav-links a.cta:hover {
+    background: var(--accent); color: #04050a;
+    box-shadow: 0 0 24px var(--accent-glow);
+  }
+  .nav-toggle { display: none; background: none; border: 0; color: var(--text); cursor: pointer; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; z-index: 2;
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding-top: 80px;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem; color: var(--accent); letter-spacing: .18em;
+    text-transform: uppercase; margin-bottom: 22px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before {
+    content: ''; width: 28px; height: 1px; background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.6rem, 7vw, 5.6rem);
+    line-height: 1.02; letter-spacing: -0.02em;
+    margin-bottom: 26px;
+  }
+  .hero h1 .grad {
+    background: linear-gradient(110deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p.lede {
+    font-size: clamp(1rem, 2vw, 1.3rem); color: var(--text-dim);
+    max-width: 620px; margin-bottom: 38px;
+  }
+  .hero .kw { color: var(--text); font-weight: 500; }
+  .btn-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .btn {
+    font-size: .92rem; font-weight: 500; padding: 13px 26px; border-radius: 100px;
+    transition: all .3s var(--ease); cursor: pointer; border: 1px solid var(--line);
+  }
+  .btn.primary {
+    background: var(--accent); color: #04050a; border-color: var(--accent);
+  }
+  .btn.primary:hover { box-shadow: 0 0 32px var(--accent-glow); transform: translateY(-2px); }
+  .btn.ghost { color: var(--text); background: rgba(255,255,255,0.02); }
+  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+  .scroll-hint {
+    position: absolute; bottom: 34px; left: 28px;
+    font-family: 'JetBrains Mono', monospace; font-size: .72rem;
+    color: var(--text-faint); letter-spacing: .14em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .scroll-hint .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    animation: pulse 2s infinite var(--ease);
+  }
+  @keyframes pulse { 0%,100%{opacity:.3; transform:scale(.8)} 50%{opacity:1; transform:scale(1.3)} }
+
+  /* ---------- generic section ---------- */
+  .section-pad { padding: 130px 0; position: relative; z-index: 2; }
+  .section-head { margin-bottom: 56px; }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+    color: var(--accent); letter-spacing: .12em; margin-bottom: 14px;
+  }
+  .section-head h2 {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600;
+    font-size: clamp(1.8rem, 4vw, 2.9rem); letter-spacing: -0.01em;
+  }
+  .section-head p { color: var(--text-dim); max-width: 560px; margin-top: 14px; }
+
+  /* about */
+  .about-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 60px; align-items: start; }
+  .about-grid p { color: var(--text-dim); font-size: 1.05rem; margin-bottom: 20px; }
+  .about-grid p strong { color: var(--text); font-weight: 500; }
+  .facts { border-left: 1px solid var(--line); padding-left: 28px; display: grid; gap: 22px; }
+  .fact .k { font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--text-faint); letter-spacing: .1em; text-transform: uppercase; }
+  .fact .v { color: var(--text); margin-top: 4px; }
+
+  /* expertise pillars */
+  .pillars { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .pillar {
+    background: linear-gradient(180deg, var(--surface), var(--bg-soft));
+    border: 1px solid var(--line); border-radius: 18px; padding: 34px;
+    transition: transform .4s var(--ease), border-color .4s var(--ease);
+  }
+  .pillar:hover { transform: translateY(-4px); border-color: rgba(77,214,232,0.3); }
+  .pillar h3 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 600;
+    margin-bottom: 22px; display: flex; align-items: center; gap: 12px;
+  }
+  .pillar h3 .ico { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+  .pillar.alt h3 .ico { background: var(--accent-2); box-shadow: 0 0 14px rgba(124,108,255,0.4); }
+  .pillar ul { list-style: none; display: grid; gap: 14px; }
+  .pillar li { color: var(--text-dim); display: flex; align-items: center; gap: 12px; font-size: .98rem; }
+  .pillar li::before { content: '—'; color: var(--accent); }
+  .pillar.alt li::before { color: var(--accent-2); }
+
+  /* projects */
+  .proj-list { display: grid; gap: 0; }
+  .proj {
+    display: grid; grid-template-columns: 90px 1fr auto; gap: 28px; align-items: center;
+    padding: 32px 8px; border-top: 1px solid var(--line);
+    transition: background .3s var(--ease), padding .3s var(--ease);
+    cursor: default;
+  }
+  .proj:last-child { border-bottom: 1px solid var(--line); }
+  .proj:hover { background: rgba(255,255,255,0.02); padding-left: 20px; padding-right: 20px; }
+  a.proj { color: inherit; }
+  a.proj { cursor: pointer; }
+  a.proj:hover .arrow { color: var(--accent); transform: translate(4px,-4px); }
+  .proj .yr { font-family: 'JetBrains Mono', monospace; font-size: .82rem; color: var(--text-faint); }
+  .proj .body h3 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.18rem; font-weight: 600;
+    margin-bottom: 8px; transition: color .3s var(--ease);
+  }
+  .proj:hover .body h3 { color: var(--accent); }
+  .proj .body p { color: var(--text-dim); font-size: .92rem; max-width: 640px; }
+  .proj .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .proj .tags span {
+    font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--text-faint);
+    border: 1px solid var(--line); padding: 3px 9px; border-radius: 100px;
+  }
+  .proj .arrow { color: var(--text-faint); font-size: 1.3rem; transition: transform .3s var(--ease), color .3s var(--ease); }
+  .proj:hover .arrow { color: var(--accent); transform: translate(4px,-4px); }
+
+  /* contact */
+  .contact-inner { text-align: center; max-width: 720px; margin: 0 auto; }
+  .contact-inner h2 {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: clamp(2.2rem, 6vw, 4rem); letter-spacing: -0.02em; margin-bottom: 24px;
+  }
+  .contact-inner h2 .grad { background: linear-gradient(110deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .contact-inner p { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 36px; }
+  .socials { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .socials a, .socials button {
+    font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: var(--text-dim);
+    border: 1px solid var(--line); padding: 11px 22px; border-radius: 100px;
+    transition: all .3s var(--ease);
+    background: none; cursor: pointer;
+  }
+  .socials a:hover, .socials button:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 0 22px var(--accent-glow); }
+  .email-reveal {
+    margin-top: 18px; font-family: 'JetBrains Mono', monospace; font-size: .9rem;
+    display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap;
+    opacity: 0; max-height: 0; overflow: hidden; transition: opacity .35s var(--ease);
+  }
+  .email-reveal.show { opacity: 1; max-height: 60px; }
+  .email-reveal a { color: var(--accent); }
+  .email-reveal .copy {
+    font-family: 'JetBrains Mono', monospace; font-size: .78rem; color: var(--text-dim);
+    border: 1px solid var(--line); border-radius: 100px; padding: 5px 12px;
+    background: none; cursor: pointer; transition: all .3s var(--ease);
+  }
+  .email-reveal .copy:hover { color: var(--accent); border-color: var(--accent); }
+
+  footer {
+    position: relative; z-index: 2; border-top: 1px solid var(--line);
+    padding: 40px 0; margin-top: 60px;
+  }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  footer .muted { color: var(--text-faint); font-size: .82rem; font-family: 'JetBrains Mono', monospace; }
+
+  /* reveal animation */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .scroll-hint .dot { animation: none; }
+  }
+
+  /* responsive */
+  @media (max-width: 860px) {
+    .about-grid { grid-template-columns: 1fr; gap: 40px; }
+    .pillars { grid-template-columns: 1fr; }
+    .proj { grid-template-columns: 60px 1fr; }
+    .proj .arrow { display: none; }
+    .nav-links { display: none; }
+    .nav-links.open {
+      display: flex; flex-direction: column; position: absolute; top: 100%; right: 0; left: 0;
+      background: rgba(7,8,13,0.96); padding: 24px 28px; gap: 20px; border-bottom: 1px solid var(--line);
+    }
+    .nav-toggle { display: block; }
+    .section-pad { padding: 90px 0; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="scrim"></div>
+
+<nav id="nav">
+  <a href="#top" class="brand">SANGYOON<sup>®</sup></a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="#about">About</a>
+    <a href="#research">Research</a>
+    <a href="#projects">Projects</a>
+    <a href="#contact">Contact</a>
+    <a href="resume.pdf" class="cta" target="_blank" rel="noopener">CV</a>
+  </div>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero wrap" id="top">
+  <div class="reveal">
+    <div class="eyebrow">Robotics Researcher &middot; HRI</div>
+    <h1>Hi, I'm Sangyoon Lee.<br />I build <span class="grad">human&#8209;centered</span> robots.</h1>
+    <p class="lede">
+      Researching and developing <span class="kw">human-centered robotic systems</span> with a focus on
+      <span class="kw">human–robot interaction</span>, <span class="kw">brain–computer interfaces</span>,
+      and <span class="kw">telepresence</span>.
+    </p>
+    <div class="btn-row">
+      <a href="#projects" class="btn primary">View Projects</a>
+      <a href="#contact" class="btn ghost">Get in touch</a>
+    </div>
+  </div>
+  <div class="scroll-hint"><span class="dot"></span> Scroll to explore</div>
+</header>
+
+<!-- ===================== ABOUT ===================== -->
+<section class="section-pad wrap" id="about">
+  <div class="section-head reveal">
+    <div class="section-num">01 / About</div>
+    <h2>Bridging brains, robots, and the people they serve.</h2>
+  </div>
+  <div class="about-grid reveal">
+    <div>
+      <p>
+        I work at the intersection of <strong>robotics, neuroadaptive interfaces, and human–robot
+        interaction</strong> — designing systems where humans and robots interact safely, clearly,
+        and intuitively.
+      </p>
+      <p>
+        My research centers on <strong>human–robot interaction (HRI)</strong> and <strong>brain–computer
+        interfaces (BCI)</strong>, translating human intent into reliable, interpretable robot behavior.
+        Alongside this I build the full robotics stack — <strong>perception and machine vision, motion
+        planning and control, and learning from demonstration</strong>.
+      </p>
+      <p>
+        I care about robot behavior that is <strong>deterministic, observable, and trustworthy</strong> —
+        not flashy demos, but systems people can actually rely on.
+      </p>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="k">Focus</div><div class="v">Human-centered Robotics</div></div>
+      <div class="fact"><div class="k">Methods</div><div class="v">HRI · EEG-BCI · Telepresence</div></div>
+      <div class="fact"><div class="k">Stack</div><div class="v">Perception · Control · Learning</div></div>
+      <div class="fact"><div class="k">Education</div><div class="v">MSc Robotics, University of Bristol (Bristol Robotics Laboratory)</div></div>
+      <div class="fact"><div class="k">Prior</div><div class="v">BEng Electronic Engineering, Kyunghee University</div></div>
+      <div class="fact"><div class="k">Based in</div><div class="v">Bristol, United Kingdom</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== RESEARCH / EXPERTISE ===================== -->
+<section class="section-pad wrap" id="research">
+  <div class="section-head reveal">
+    <div class="section-num">02 / Expertise</div>
+    <h2>Two foundations, one system.</h2>
+    <p>From the sensing brain to the actuating circuit — a full-stack view of human-centered robotics.</p>
+  </div>
+  <div class="pillars">
+    <div class="pillar reveal">
+      <h3><span class="ico"></span> Robotics &amp; HRI</h3>
+      <ul>
+        <li>Human-centered Robotics</li>
+        <li>HRI &amp; Telepresence</li>
+        <li>Neuroadaptive interfaces</li>
+      </ul>
+    </div>
+    <div class="pillar alt reveal">
+      <h3><span class="ico"></span> Perception, Control &amp; Learning</h3>
+      <ul>
+        <li>Machine vision &amp; perception</li>
+        <li>Motion planning &amp; control</li>
+        <li>Learning from demonstration</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PROJECTS ===================== -->
+<section class="section-pad wrap" id="projects">
+  <div class="section-head reveal">
+    <div class="section-num">03 / Selected Work</div>
+    <h2>Featured projects.</h2>
+  </div>
+  <div class="proj-list">
+
+    <article class="proj reveal">
+      <div class="yr">In progress</div>
+      <div class="body">
+        <h3>Spatialized Audio Neurofeedback-based Calibration of a Motor Imagery EEG-BCI for Robot Control</h3>
+        <p>Decoding motor-imagery EEG into robot commands, with spatialized-audio neurofeedback closing the loop between brain and machine. <em>MSc thesis · in progress, expected Sep 2026.</em></p>
+        <div class="tags"><span>EEG-BCI</span><span>Neurofeedback</span><span>Robot Control</span></div>
+      </div>
+      <div class="arrow">↗</div>
+    </article>
+
+    <a class="proj reveal" href="coursework/advanced-control.html" target="_blank" rel="noopener">
+      <div class="yr">Apr 2026</div>
+      <div class="body">
+        <h3>Sliding-Mode + LQR Hybrid Control of a 2-Link Manipulator</h3>
+        <p>A hybrid controller blending sliding-mode robustness with LQR smoothness, validated against three baselines on a planar arm under bounded disturbances. <em>MSc · UFME7F.</em></p>
+        <div class="tags"><span>SMC + LQR</span><span>MATLAB / Simulink</span><span>Control</span></div>
+      </div>
+      <div class="arrow">↗</div>
+    </a>
+
+    <a class="proj reveal" href="coursework/robot-learning.html" target="_blank" rel="noopener">
+      <div class="yr">Apr 2026</div>
+      <div class="body">
+        <h3>Learning from Demonstration with DMP &amp; GMR</h3>
+        <p>Encoding demonstrated motion with Dynamic Movement Primitives and Gaussian Mixture Regression, then reproducing it on a 2-DOF arm through inverse kinematics and model-based control. <em>MSc · UFME7R.</em></p>
+        <div class="tags"><span>DMP</span><span>GMM / GMR</span><span>Learning from Demonstration</span></div>
+      </div>
+      <div class="arrow">↗</div>
+    </a>
+
+    <a class="proj reveal" href="coursework/ai-robotics-herobot.html" target="_blank" rel="noopener">
+      <div class="yr">Apr 2026</div>
+      <div class="body">
+        <h3>AI for Robotics — HeroBot MazeDungeon</h3>
+        <p>A three-part study comparing supervised classification, unsupervised clustering, and reinforcement learning on a game-like robot agent. <em>MSc · SEMTM0016.</em></p>
+        <div class="tags"><span>CNN / KNN</span><span>Clustering</span><span>Q-Learning / SARSA</span></div>
+      </div>
+      <div class="arrow">↗</div>
+    </a>
+
+    <a class="proj reveal" href="coursework/robotics-fundamentals.html" target="_blank" rel="noopener">
+      <div class="yr">Jan 2026</div>
+      <div class="body">
+        <h3>Robot Kinematics &amp; Trajectory Generation</h3>
+        <p>Foundations of robot motion — a toolkit of trajectory generators (trapezoidal, polynomial, via-point blends) and an analytical inverse-kinematics solver for a planar 2-DOF arm. <em>MSc · UFMF4X.</em></p>
+        <div class="tags"><span>Inverse Kinematics</span><span>Trajectory Planning</span><span>Python / MATLAB</span></div>
+      </div>
+      <div class="arrow">↗</div>
+    </a>
+
+    <a class="proj reveal" href="coursework/machine-vision.html" target="_blank" rel="noopener">
+      <div class="yr">Dec 2025</div>
+      <div class="body">
+        <h3>Orchard Apple Detection &amp; Counting</h3>
+        <p>A staged vision pipeline — CLAHE, colour and texture segmentation, overlapping tiling, then YOLOv8 with NMS — iterated over five versions to F1 0.89 on a 77-apple test set. <em>MSc · Machine Vision.</em></p>
+        <div class="tags"><span>YOLOv8</span><span>OpenCV</span><span>Detection &amp; Counting</span></div>
+      </div>
+      <div class="arrow">↗</div>
+    </a>
+
+    <a class="proj reveal" href="coursework/science-systems.html" target="_blank" rel="noopener">
+      <div class="yr">Dec 2025</div>
+      <div class="body">
+        <h3>Leader–Follower Coordination on the Pololu 3pi+</h3>
+        <p>Two differential-drive robots holding a formation with no wireless link — IR-only following with dual proportional loops, encoder odometry, and IMU-driven collision response with dynamic role-switching. <em>MSc · SEMTM0043.</em></p>
+        <div class="tags"><span>Multi-Robot</span><span>IR Tracking</span><span>Embedded C++</span></div>
+      </div>
+      <div class="arrow">↗</div>
+    </a>
+
+  </div>
+</section>
+
+<!-- ===================== CONTACT ===================== -->
+<section class="section-pad wrap" id="contact">
+  <div class="contact-inner reveal">
+    <div class="section-num" style="text-align:center">04 / Contact</div>
+    <h2>Let's build something <span class="grad">human-centered.</span></h2>
+    <p>Open to research collaborations, robotics &amp; HRI work, and good conversations.</p>
+    <div class="socials">
+      <button id="email-toggle" type="button" aria-expanded="false" aria-controls="email-reveal">Email</button>
+      <a href="https://github.com/sangyoon4-ui" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.linkedin.com/in/sang-yoon-lee-7336922ba/" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+    <div class="email-reveal" id="email-reveal" role="status" aria-live="polite">
+      <a href="mailto:sangyoon4@gmail.com">sangyoon4@gmail.com</a>
+      <button class="copy" type="button" data-email="sangyoon4@gmail.com">Copy</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="brand">SANGYOON<sup>®</sup></span>
+    <span class="muted">© 2026 Sangyoon Lee · Built with code, not a builder.</span>
+  </div>
+</footer>
+
+<!-- Three.js (UMD, no build step) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ---------- nav scroll state ----------
+  var nav = document.getElementById('nav');
+  var onScroll = function () {
+    if (window.scrollY > 40) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ---------- mobile menu ----------
+  var toggle = document.getElementById('navToggle');
+  var links = document.getElementById('navLinks');
+  toggle.addEventListener('click', function () { links.classList.toggle('open'); });
+  links.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A') links.classList.remove('open');
+  });
+
+  // ---------- scroll reveal ----------
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+  }
+
+  // ---------- 3D particle hero ----------
+  var canvas = document.getElementById('bg-canvas');
+  if (reduce || !window.THREE) {
+    // static fallback: subtle gradient
+    canvas.style.background = 'radial-gradient(80% 60% at 70% 20%, rgba(77,214,232,0.10), transparent 60%)';
+    return;
+  }
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.z = 14;
+
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // perf cap
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // group holds the whole brain so we rotate it as one
+  var brain = new THREE.Group();
+  scene.add(brain);
+
+  // ---------- generate brain-shaped neuron nodes ----------
+  // Fibonacci sphere → deformed into a cerebrum (two hemispheres, central
+  // fissure, gyri-like surface wrinkles) so the cloud reads as a brain.
+  var COUNT = window.innerWidth < 700 ? 900 : 1500;
+  var nodes = new Float32Array(COUNT * 3);
+  var SX = 5.0, SY = 4.2, SZ = 5.8;           // ellipsoid radii (z = front-back)
+  var golden = Math.PI * (3 - Math.sqrt(5));
+  for (var i = 0; i < COUNT; i++) {
+    var y0 = 1 - (i / (COUNT - 1)) * 2;
+    var r  = Math.sqrt(Math.max(0, 1 - y0 * y0));
+    var th = golden * i;
+    var ux = Math.cos(th) * r, uy = y0, uz = Math.sin(th) * r;
+
+    var px = ux * SX, py = uy * SY, pz = uz * SZ;
+
+    // gyri / sulci surface wrinkles along the radial direction
+    var w = 0.42 * (Math.sin(ux * 8.0) * Math.sin(uz * 7.0)
+                  + Math.sin(uy * 9.0 + uz * 4.0) * 0.7);
+    px += ux * w; py += uy * w; pz += uz * w;
+
+    // longitudinal fissure: groove down the top midline (x ≈ 0, upper half)
+    var fissure = Math.exp(-(ux * ux) / 0.02) * Math.max(0, uy);
+    py -= fissure * 1.5;
+    // separate the two hemispheres slightly across the midline
+    px += (px >= 0 ? 1 : -1) * Math.exp(-(ux * ux) / 0.05) * 0.35;
+
+    // tiny jitter so it doesn't look like a perfect lattice
+    nodes[i*3]   = px + (Math.random() - 0.5) * 0.18;
+    nodes[i*3+1] = py + (Math.random() - 0.5) * 0.18;
+    nodes[i*3+2] = pz + (Math.random() - 0.5) * 0.18;
+  }
+
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(nodes, 3));
+
+  // soft round sprite for the neuron cell bodies
+  var sprite = (function () {
+    var c = document.createElement('canvas'); c.width = c.height = 64;
+    var ctx = c.getContext('2d');
+    var g = ctx.createRadialGradient(32,32,0,32,32,32);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.25, 'rgba(160,235,245,0.9)');
+    g.addColorStop(1, 'rgba(77,214,232,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,64,64);
+    var t = new THREE.Texture(c); t.needsUpdate = true; return t;
+  })();
+
+  var mat = new THREE.PointsMaterial({
+    size: 0.16, map: sprite, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, color: 0x9fecf5, opacity: 0.95
+  });
+  var points = new THREE.Points(geo, mat);
+  brain.add(points);
+
+  // ---------- build synapse connections (each node → few nearest) ----------
+  var edgePairs = [];                 // [aIndex, bIndex]
+  var seen = {};
+  var degree = new Int8Array(COUNT);
+  var MAX_DEG = 3;
+  for (var a = 0; a < COUNT; a++) {
+    if (degree[a] >= MAX_DEG) continue;
+    // find nearest neighbours of a (small partial search)
+    var best = [-1,-1,-1], bestD = [1e9,1e9,1e9];
+    var ax = nodes[a*3], ay = nodes[a*3+1], az = nodes[a*3+2];
+    for (var b = 0; b < COUNT; b++) {
+      if (b === a) continue;
+      var dx = nodes[b*3]-ax, dy = nodes[b*3+1]-ay, dz = nodes[b*3+2]-az;
+      var d = dx*dx + dy*dy + dz*dz;
+      if (d < bestD[2]) {
+        if (d < bestD[0]) { bestD[2]=bestD[1]; best[2]=best[1]; bestD[1]=bestD[0]; best[1]=best[0]; bestD[0]=d; best[0]=b; }
+        else if (d < bestD[1]) { bestD[2]=bestD[1]; best[2]=best[1]; bestD[1]=d; best[1]=b; }
+        else { bestD[2]=d; best[2]=b; }
+      }
+    }
+    for (var k = 0; k < 3; k++) {
+      var nb = best[k];
+      if (nb < 0 || degree[a] >= MAX_DEG) continue;
+      var key = a < nb ? a + '_' + nb : nb + '_' + a;
+      if (seen[key]) continue;
+      seen[key] = 1;
+      edgePairs.push([a, nb]);
+      degree[a]++; degree[nb]++;
+    }
+  }
+
+  var linePos = new Float32Array(edgePairs.length * 2 * 3);
+  for (var e = 0; e < edgePairs.length; e++) {
+    var ia = edgePairs[e][0], ib = edgePairs[e][1];
+    linePos[e*6]   = nodes[ia*3];   linePos[e*6+1] = nodes[ia*3+1]; linePos[e*6+2] = nodes[ia*3+2];
+    linePos[e*6+3] = nodes[ib*3];   linePos[e*6+4] = nodes[ib*3+1]; linePos[e*6+5] = nodes[ib*3+2];
+  }
+  var lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
+  var lineMat = new THREE.LineBasicMaterial({
+    color: 0x4dd6e8, transparent: true, opacity: 0.16,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  var synapses = new THREE.LineSegments(lineGeo, lineMat);
+  brain.add(synapses);
+
+  // ---------- travelling signal pulses along synapses ----------
+  var SIG = Math.min(70, edgePairs.length);
+  var sigPos = new Float32Array(SIG * 3);
+  var sigEdge = new Int32Array(SIG);
+  var sigT = new Float32Array(SIG);
+  var sigSpeed = new Float32Array(SIG);
+  function seedSignal(s) {
+    sigEdge[s] = (Math.random() * edgePairs.length) | 0;
+    sigT[s] = Math.random();
+    sigSpeed[s] = 0.006 + Math.random() * 0.014;
+  }
+  for (var s = 0; s < SIG; s++) seedSignal(s);
+  var sigGeo = new THREE.BufferGeometry();
+  sigGeo.setAttribute('position', new THREE.BufferAttribute(sigPos, 3));
+  var sigMat = new THREE.PointsMaterial({
+    size: 0.34, map: sprite, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, color: 0xffffff, opacity: 0.95
+  });
+  var signals = new THREE.Points(sigGeo, sigMat);
+  brain.add(signals);
+
+  function updateSignals() {
+    for (var s = 0; s < SIG; s++) {
+      sigT[s] += sigSpeed[s];
+      if (sigT[s] >= 1) seedSignal(s);
+      var ep = edgePairs[sigEdge[s]];
+      var ia = ep[0], ib = ep[1], t = sigT[s];
+      sigPos[s*3]   = nodes[ia*3]   + (nodes[ib*3]   - nodes[ia*3])   * t;
+      sigPos[s*3+1] = nodes[ia*3+1] + (nodes[ib*3+1] - nodes[ia*3+1]) * t;
+      sigPos[s*3+2] = nodes[ia*3+2] + (nodes[ib*3+2] - nodes[ia*3+2]) * t;
+    }
+    sigGeo.attributes.position.needsUpdate = true;
+  }
+
+  // ---------- interaction: mouse / device parallax ----------
+  var targetX = 0, targetY = 0, curX = 0, curY = 0;
+  window.addEventListener('mousemove', function (e) {
+    targetX = (e.clientX / window.innerWidth - 0.5);
+    targetY = (e.clientY / window.innerHeight - 0.5);
+  }, { passive: true });
+
+  var scrollY = 0;
+  window.addEventListener('scroll', function () { scrollY = window.scrollY; }, { passive: true });
+
+  // ---------- resize ----------
+  function resize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  var rt;
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(resize, 150); });
+
+  // ---------- animation loop (pause when tab hidden) ----------
+  var running = true;
+  document.addEventListener('visibilitychange', function () {
+    running = !document.hidden;
+    if (running) loop();
+  });
+
+  function loop() {
+    if (!running) return;
+    requestAnimationFrame(loop);
+
+    curX += (targetX - curX) * 0.04;
+    curY += (targetY - curY) * 0.04;
+
+    // rotate the whole brain; mouse adds parallax tilt
+    brain.rotation.y += 0.0012;
+    brain.rotation.x = curY * 0.3;
+    brain.rotation.z = curX * 0.1;
+
+    updateSignals();
+
+    // gentle scroll-driven zoom-out as you read
+    camera.position.z = 14 + Math.min(scrollY * 0.004, 6);
+    camera.position.x += (curX * 2.4 - camera.position.x) * 0.05;
+    camera.position.y += (-curY * 2.0 - camera.position.y) * 0.05;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+  }
+  loop();
+})();
+
+// Email reveal: 클릭하면 메일 앱 대신 주소를 아래에 노출 + 복사
+(function () {
+  var toggle = document.getElementById('email-toggle');
+  var reveal = document.getElementById('email-reveal');
+  if (!toggle || !reveal) return;
+  toggle.addEventListener('click', function () {
+    var open = reveal.classList.toggle('show');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  var copyBtn = reveal.querySelector('.copy');
+  if (copyBtn && navigator.clipboard) {
+    copyBtn.addEventListener('click', function () {
+      navigator.clipboard.writeText(copyBtn.dataset.email).then(function () {
+        var prev = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function () { copyBtn.textContent = prev; }, 1500);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

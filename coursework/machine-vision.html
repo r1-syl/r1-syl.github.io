@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orchard Apple Detection &amp; Counting — Sangyoon Lee</title>
+<meta name="description" content="A staged machine-vision pipeline that detects and counts apples in orchard images — combining classical preprocessing (CLAHE, HSV segmentation, Laplacian texture, overlapping tiling) with a YOLOv8 detector and NMS. MSc coursework, UWE Bristol." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="coursework.css" />
+</head>
+<body>
+<div class="backdrop"></div>
+
+<nav>
+  <a href="../index.html" class="brand">SANGYOON<sup>®</sup></a>
+  <a href="../index.html#projects" class="back">← Back to projects</a>
+</nav>
+
+<header class="doc-hero wrap">
+  <div class="reveal in">
+    <div class="eyebrow">MSc Coursework · UWE Bristol</div>
+    <h1>Orchard Apple Detection &amp; Counting</h1>
+    <p class="lede">
+      Building a machine-vision pipeline that finds and counts individual apples in orchard
+      photographs — pairing classical image processing (contrast enhancement, colour and texture
+      segmentation, overlapping image tiling) with a YOLOv8 detector, then iterating through five
+      versions until the false-positive problem at long range was solved.
+    </p>
+    <div class="meta">
+      <div class="m"><div class="k">Unit</div><div class="v">Machine Vision</div></div>
+      <div class="m"><div class="k">Tools</div><div class="v">Python · OpenCV · scikit-image · Ultralytics YOLOv8</div></div>
+      <div class="m"><div class="k">Task</div><div class="v">Object detection &amp; counting</div></div>
+      <div class="m"><div class="k">Date</div><div class="v">Dec 2025</div></div>
+    </div>
+    <div class="tags">
+      <span>YOLOv8</span><span>CLAHE</span><span>HSV Segmentation</span><span>Laplacian Texture</span>
+      <span>Image Tiling</span><span>Non-Max Suppression</span>
+    </div>
+  </div>
+</header>
+
+<main class="doc-body wrap">
+
+  <section class="reveal">
+    <div class="sec-num">01 / Problem</div>
+    <h2>Counting apples on a tree</h2>
+    <p>
+      The task was to detect and count individual apples in orchard tree images — the perception
+      front-end of any yield-estimation or harvesting system. What makes it hard is scale variation:
+      the same pipeline has to work on <strong>close-range</strong> shots, where apples are large and
+      few, and on <strong>far-range</strong> shots, where dozens of small apples crowd together against
+      a cluttered, leafy background.
+    </p>
+    <p>
+      The evaluation set captured exactly that contrast — a close-range image with
+      <strong>11 ground-truth apples</strong> and a far-range image with <strong>66</strong>, for
+      <strong>77</strong> apples total. Detections were matched to ground truth by intersection-over-union
+      (Jaccard index, IoU threshold 0.2), so a "hit" means a box that genuinely overlaps a real apple, not
+      just a count that happens to line up.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">02 / Pipeline</div>
+    <h2>Classical preprocessing into a learned detector</h2>
+    <p>
+      Rather than throw raw images at the detector, I built a preprocessing stack that makes apples
+      easier to find, then let YOLOv8 do the final localisation. Each stage targets a specific failure
+      mode:
+    </p>
+    <ul class="tasks">
+      <li><span class="n">1</span><span><b>Brightness.</b> CLAHE on the LAB <em>L</em> channel (<code>clipLimit = 3.0</code>, <code>8×8</code> tiles) to even out orchard lighting and shadow.</span></li>
+      <li><span class="n">2</span><span><b>Colour.</b> HSV masking with separate green- and red-apple ranges to suppress foliage before detection.</span></li>
+      <li><span class="n">3</span><span><b>Texture.</b> Laplacian edge response plus morphological closing/opening to keep textured fruit regions and drop flat background.</span></li>
+      <li><span class="n">4</span><span><b>Tiling.</b> Decompose the image into overlapping tiles (25–30% overlap) so small, distant apples occupy enough pixels for the detector to fire.</span></li>
+      <li><span class="n">5</span><span><b>Detect &amp; merge.</b> YOLOv8 per tile, then non-maximum suppression to fuse duplicate boxes from the overlap regions.</span></li>
+    </ul>
+    <p>
+      Several heavier segmentation routes — watershed, GrabCut, and SLIC superpixels
+      (<code>n_segments = 500</code>, <code>compactness = 13</code>) with an apple-likeness score in LAB
+      space — were prototyped and benchmarked, but the leaner CLAHE → colour → texture → tiling stack is
+      what carried into the final pipeline.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">03 / Results</div>
+    <h2>Five versions, measured the same way</h2>
+    <p>
+      Each version was scored on the same 77-apple set with the same IoU-matched metric, so the numbers
+      are directly comparable. The progression is the point — and version 4 is in the table on purpose,
+      because it shows what breaks when a stage is removed:
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead>
+          <tr><th>Version</th><th>Precision</th><th>Recall</th><th>F1</th><th>Accuracy</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>V1 — raw YOLO baseline</td><td>55.00%</td><td>85.71%</td><td>0.6701</td><td>50.38%</td></tr>
+          <tr><td>V3 — CLAHE + colour mask + crops</td><td>81.01%</td><td>83.12%</td><td>0.8205</td><td>69.57%</td></tr>
+          <tr><td>V4 — texture + tiling, <em>no NMS</em></td><td>48.61%</td><td>90.91%</td><td>0.6335</td><td>46.36%</td></tr>
+          <tr class="best"><td>V5 — full pipeline + NMS</td><td class="hl">86.59%</td><td class="hl">92.21%</td><td class="hl">0.8931</td><td class="hl">80.68%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="big">0.89</div><div class="lbl">final F1, up from 0.67 at the raw-YOLO baseline</div></div>
+      <div class="metric"><div class="big">86.6%</div><div class="lbl">precision — false positives cut from 54 to 11 boxes</div></div>
+      <div class="metric"><div class="big">1.00</div><div class="lbl">precision / recall / F1 on the close-range image (11/11 apples)</div></div>
+    </div>
+    <p>
+      Version 4 is the instructive one: adding overlapping tiles lifted recall to 90.91% — almost nothing
+      was missed — but <strong>without</strong> non-maximum suppression every apple in an overlap region
+      was counted multiple times, so precision collapsed to 48.61% (74 false positives on the far-range
+      image alone). Re-introducing NMS in version 5 fused those duplicates and recovered precision to
+      86.59% <em>while keeping</em> the high recall — the best of both. On the close-range image, version 5
+      reached a perfect 11/11 with no false positives.
+    </p>
+    <p class="note">
+      Metric: per-detection IoU matching (Jaccard, threshold 0.2) against hand-labelled boxes; counts and
+      confusion-matrix figures are computed in the notebook, not asserted.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">04 / Takeaways</div>
+    <h2>What I took from it</h2>
+    <ul>
+      <li>Preprocessing is not cosmetic — moving from raw YOLO (V1) to the full classical stack (V5) lifted F1 by more than 0.22, on the same detector and the same images.</li>
+      <li>Tiling and NMS are a <strong>pair</strong>: tiling buys recall on small far-range fruit, but it only works if NMS is there to clean up the duplicate boxes it inevitably creates — V4 is the cautionary middle step that proves it.</li>
+      <li>Scale dominates difficulty: close-range detection reached a perfect score, while far-range stayed the bottleneck — the honest way to report a counting system is to split the two rather than hide far-range error inside an average.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="doc-foot wrap">
+  <a href="../index.html#projects" class="home">← All projects</a>
+  <span class="muted">Machine Vision · MSc Robotics · UWE Bristol</span>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    } else {
+      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  })();
+</script>
+</body>
+</html>

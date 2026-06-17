@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC + LQR Hybrid Control — Sangyoon Lee</title>
+<meta name="description" content="Designing and validating a sliding-mode + LQR hybrid controller for a 2-link robotic manipulator under bounded disturbances. MSc coursework, UWE Bristol." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="coursework.css" />
+</head>
+<body>
+<div class="backdrop"></div>
+
+<nav>
+  <a href="../index.html" class="brand">SANGYOON<sup>®</sup></a>
+  <a href="../index.html#projects" class="back">← Back to projects</a>
+</nav>
+
+<header class="doc-hero wrap">
+  <div class="reveal in">
+    <div class="eyebrow">MSc Coursework · UWE Bristol</div>
+    <h1>Sliding-Mode + LQR Hybrid Control of a 2-Link Manipulator</h1>
+    <div class="report-attach">
+      <a href="reports/advanced-control-report.pdf" target="_blank" rel="noopener">
+        <span class="ic">📄</span> View full report
+      </a>
+      <span class="fmt">PDF · 2.0 MB</span>
+    </div>
+    <p class="lede">
+      Designing, implementing, and validating a hybrid controller that pairs the disturbance
+      rejection of sliding-mode control with the smoothness of an LQR — then stress-testing it
+      against three baselines on a planar 2-link arm under bounded matched disturbances.
+    </p>
+    <div class="meta">
+      <div class="m"><div class="k">Unit</div><div class="v">UFME7F-15-M · Advanced Control &amp; Dynamics</div></div>
+      <div class="m"><div class="k">Tools</div><div class="v">MATLAB · Simulink</div></div>
+      <div class="m"><div class="k">Plant</div><div class="v">2-link planar manipulator</div></div>
+      <div class="m"><div class="k">Date</div><div class="v">April 2026</div></div>
+    </div>
+    <div class="tags">
+      <span>Sliding-Mode Control</span><span>LQR</span><span>Lagrangian Dynamics</span>
+      <span>Underactuated</span><span>Simulink</span>
+    </div>
+  </div>
+</header>
+
+<main class="doc-body wrap">
+
+  <section class="reveal">
+    <div class="sec-num">01 / Problem</div>
+    <h2>The control problem</h2>
+    <p>
+      The task was to take a fully nonlinear 2-link planar manipulator, derive its dynamics from
+      first principles, and design a controller that holds an accurate joint configuration while
+      <strong>matched, bounded disturbance torques</strong> act on both joints
+      (<code>‖τ_d‖∞ ≤ [2.5, 1.5] N·m</code>). The headline design target was a controller that is
+      both <strong>robust</strong> (rejects disturbances like SMC) and <strong>smooth</strong>
+      (low actuator effort like LQR) — the two goals that single-method controllers usually trade off.
+    </p>
+    <p>
+      I structured the work as five tasks, building from the physics up to an underactuated edge case.
+    </p>
+    <ul class="tasks">
+      <li><span class="n">1</span><span><b>Dynamic modelling.</b> Full Lagrangian derivation of the mass, Coriolis, and gravity terms for the 2-link arm.</span></li>
+      <li><span class="n">2</span><span><b>Control design.</b> LQR about a linearised operating point, a boundary-layer SMC, and the hybrid blend of the two.</span></li>
+      <li><span class="n">3</span><span><b>Simulink implementation.</b> A 3-level manual-switch hierarchy so each controller runs on the identical plant.</span></li>
+      <li><span class="n">4</span><span><b>Performance analysis.</b> Quantitative comparison of SMC+LQR against SMC, FLC, and pure LQR.</span></li>
+      <li><span class="n">5</span><span><b>Underactuated control.</b> Collocated partial feedback linearisation when one joint is unactuated.</span></li>
+    </ul>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">02 / Modelling</div>
+    <h2>Dynamics &amp; design</h2>
+    <p>
+      I derived the manipulator dynamics in the standard manipulator-equation form
+      <code>M(q)q̈ + C(q,q̇)q̇ + G(q) = τ</code> using the Lagrangian, then linearised about the
+      operating point <code>q* = [1.25, 1.25] rad</code> to obtain the state-space model used for LQR
+      synthesis. The hybrid law keeps the LQR as the nominal stabiliser and adds a sliding-mode term
+      that only does work when the trajectory leaves a thin boundary layer, so the chattering that
+      plagues pure SMC is suppressed.
+    </p>
+    <div class="card accent">
+      <h3 style="margin-top:0">Design parameters</h3>
+      <ul>
+        <li><strong>LQR weights:</strong> <code>Qp = 100</code>, <code>Qd = 20</code>, <code>R = 1</code></li>
+        <li><strong>PD-equivalent gains:</strong> <code>Kp = 10</code>, <code>Kd = 2√10 ≈ 6.3246</code> (critical damping)</li>
+        <li><strong>SMC switching gain:</strong> <code>K = [3.5; 2.5] N·m</code>, sized above the disturbance bound</li>
+        <li><strong>Boundary layer:</strong> <code>φ = 0.1 rad</code>, sliding-surface slope <code>λ = [5; 5]</code></li>
+      </ul>
+      <p style="margin-bottom:0" class="note">
+        The switching gain is deliberately set just above ‖τ_d‖∞ so the sliding term has just enough
+        authority to dominate the worst-case disturbance without over-driving the actuators.
+      </p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">03 / Implementation</div>
+    <h2>Simulink test rig</h2>
+    <p>
+      All four controllers share one plant model. I built a <strong>3-level manual-switch hierarchy</strong>
+      so that SMC+LQR, standalone SMC, fuzzy-logic control (FLC), and pure LQR can each be routed to the
+      exact same manipulator under the exact same disturbance profile. This keeps the comparison fair —
+      any difference in the results comes from the control law, not from a different test setup.
+    </p>
+    <p>
+      The disturbance was injected as a matched torque on both joints, bounded by the design limits, so
+      the experiment directly probes the robustness the controllers were designed for.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">04 / Results</div>
+    <h2>How the hybrid performed</h2>
+    <p>
+      Steady-state tracking error (RMSE, in milliradians) and settling time across the four controllers,
+      under identical disturbance conditions:
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead>
+          <tr><th>Controller</th><th>ss-RMSE J1 (mrad)</th><th>ss-RMSE J2 (mrad)</th><th>Settling J1 (s)</th><th>Settling J2 (s)</th></tr>
+        </thead>
+        <tbody>
+          <tr class="best"><td>SMC + LQR (hybrid)</td><td class="hl">1.20</td><td class="hl">2.26</td><td class="hl">0.968</td><td class="hl">0.841</td></tr>
+          <tr><td>SMC (standalone)</td><td>1.36</td><td>2.45</td><td>—</td><td>—</td></tr>
+          <tr><td>FLC</td><td>8.71</td><td>13.31</td><td>—</td><td>—</td></tr>
+          <tr><td>Pure LQR</td><td>21.76</td><td>27.74</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="big">8–36%</div><div class="lbl">lower steady-state RMSE than standalone SMC</div></div>
+      <div class="metric"><div class="big">~41%</div><div class="lbl">lower torque total-variation (smoother actuation)</div></div>
+      <div class="metric"><div class="big">×18</div><div class="lbl">tighter tracking than pure LQR on joint 1</div></div>
+    </div>
+    <p>
+      The hybrid achieved the lowest steady-state error of all four controllers while also producing
+      the <strong>smoothest torque signal</strong> — roughly 41% less total variation than standalone SMC,
+      which is the chattering metric that matters most for real actuators. In other words, it kept SMC's
+      robustness but shed SMC's biggest practical drawback.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">05 / Extension</div>
+    <h2>Underactuated case</h2>
+    <p>
+      The final task removed actuation from one joint. I applied <strong>collocated partial feedback
+      linearisation (PFL)</strong> — linearising the dynamics of the actuated joint and letting the
+      passive joint follow through the coupling terms. This is the harder, more realistic regime
+      (fewer actuators than degrees of freedom) and it framed why the fully-actuated hybrid result is
+      a baseline rather than an endpoint.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">06 / Takeaways</div>
+    <h2>What I took from it</h2>
+    <ul>
+      <li>A hybrid is only worth it if it keeps the <strong>strength</strong> of each parent while dropping a <strong>weakness</strong> — here, SMC's robustness minus its chattering, quantified by torque total-variation rather than asserted.</li>
+      <li>Fair comparison is an engineering artefact in itself: the shared-plant switch rig is what makes the four-way result trustworthy.</li>
+      <li>Reporting <strong>both</strong> tracking error and actuation smoothness matters — a controller that wins on RMSE but thrashes the actuator is not actually better.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="doc-foot wrap">
+  <a href="../index.html#projects" class="home">← All projects</a>
+  <span class="muted">UFME7F · MSc Robotics · UWE Bristol</span>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    } else {
+      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  })();
+</script>
+</body>
+</html>
