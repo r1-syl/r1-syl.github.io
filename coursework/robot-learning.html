@@ -101,6 +101,11 @@
       ~90 iterations) and reconstructs the trajectory with <strong>Gaussian Mixture Regression</strong> —
       conditioning the joint distribution on the phase to retrieve the expected motion plus its covariance.
     </p>
+    <figure class="fig">
+      <img src="figures/robot-learning/task2_1_dmp_reconstruction.png"
+           alt="DMP reconstruction of the demonstrated x and y trajectories versus the demonstration mean" loading="lazy" />
+      <figcaption><b>DMP reconstruction.</b> Standard DMP (LWLS forcing term) reproducing the demonstrated x/y motion against the demonstration mean — the encoding whose reproduction RMSE the K-sweep above is tuning.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
@@ -126,6 +131,11 @@
       least-squares baseline, and — unlike a point-estimate fit — it also carries a covariance at every
       phase, which encodes how consistent the demonstrations were at each part of the motion.
     </p>
+    <figure class="fig">
+      <img src="figures/robot-learning/task2_3_trajectory_comparison.png"
+           alt="x and y reconstructions from standard DMP and GMM-GMR DMP overlaid on the demonstration mean" loading="lazy" />
+      <figcaption><b>GMR vs. standard DMP.</b> x/y reconstructions against the demonstration mean (black): the GMM-GMR DMP (red) tracks the demonstration almost exactly, while the standard LWLS DMP (blue dashed) deviates — the visual counterpart of the 66.6% RMSE gap.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
@@ -147,6 +157,11 @@
         (<code>≤ 1e-6</code>).
       </p>
     </div>
+    <figure class="fig">
+      <img src="figures/robot-learning/task3_reference_trajectory.png"
+           alt="End-effector reference trajectory in the Cartesian plane with marked start and goal" loading="lazy" />
+      <figcaption><b>Learned Cartesian path.</b> The GMM-GMR end-effector reference in the x–y plane, from start (green) to goal (blue) — this is the path the analytical inverse kinematics resolves into joint angles.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
@@ -176,6 +191,11 @@
       finite bandwidth of the controller rather than a structural failure, since the inverse-dynamics
       feedforward already cancels most of the nonlinear coupling.
     </p>
+    <figure class="fig">
+      <img src="figures/robot-learning/task4_pd_step_response.png"
+           alt="Step response of a 1-DOF second-order model under three PD gain settings versus the target" loading="lazy" />
+      <figcaption><b>Gain selection.</b> Step response of a 1-DOF 2nd-order model under three PD settings: the chosen <b>Kp = 100, Kd = 20</b> (green, ζ = 1.0) reaches the target fastest with no overshoot, while Kp = 10, Kd = 2 (ζ = 0.32) overshoots — the rationale for the critically-damped feedback gains used on the full plant.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">

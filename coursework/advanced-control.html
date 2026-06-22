@@ -110,6 +110,11 @@
       The disturbance was injected as a matched torque on both joints, bounded by the design limits, so
       the experiment directly probes the robustness the controllers were designed for.
     </p>
+    <figure class="fig">
+      <img src="figures/advanced-control/simulink_architecture.png"
+           alt="Simulink block diagram of the 3-level manual-switch hierarchy routing four controllers to one shared plant" loading="lazy" />
+      <figcaption><b>3-level manual-switch test rig.</b> A shared 2-link plant fed by SMC+LQR, standalone SMC, FLC, and pure LQR through manual switches — every controller runs on the identical model and disturbance profile.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
@@ -143,6 +148,16 @@
       which is the chattering metric that matters most for real actuators. In other words, it kept SMC's
       robustness but shed SMC's biggest practical drawback.
     </p>
+    <figure class="fig">
+      <img src="figures/advanced-control/tracking_all.png"
+           alt="Joint tracking of q1 and q2 for SMC+LQR, SMC, and FLC against the reference" loading="lazy" />
+      <figcaption><b>Joint tracking under disturbance.</b> Reference (dashed) vs. SMC+LQR, SMC, and FLC for both joints. The hybrid and SMC settle tightly onto the reference; FLC leaves a visible residual oscillation on q₂.</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="figures/advanced-control/torque_comparison.png"
+           alt="Raw versus moving-average filtered control torque, comparing chattering between controllers" loading="lazy" />
+      <figcaption><b>Actuation smoothness.</b> Control torque per joint (faded = raw, bold = 60 ms moving average) for SMC+LQR, SMC, and FLC — the basis for the ~41% lower total-variation (chattering) figure quoted above.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
@@ -155,6 +170,11 @@
       (fewer actuators than degrees of freedom) and it framed why the fully-actuated hybrid result is
       a baseline rather than an endpoint.
     </p>
+    <figure class="fig">
+      <img src="figures/advanced-control/underactuated_tracking.png"
+           alt="Joint response of the underactuated 2-link arm under collocated partial feedback linearisation" loading="lazy" />
+      <figcaption><b>Underactuated regime.</b> Fully-actuated SMC+LQR (left, both joints track) vs. the underactuated case (right): the active joint still tracks under PFL, while the passive joint shows a sustained free oscillation it cannot directly control.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">

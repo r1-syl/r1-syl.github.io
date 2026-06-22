@@ -186,6 +186,40 @@ table.res .best td:first-child { color: var(--text); font-weight: 600; }
   color: var(--text-faint); margin-top: 8px;
 }
 
+/* ---------- figures ---------- */
+figure.fig {
+  margin: 26px 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+figure.fig img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* plots are exported on white — a light pad keeps them readable on the dark theme */
+  background: #fff;
+}
+figure.fig figcaption {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .76rem;
+  color: var(--text-faint);
+  line-height: 1.55;
+  padding: 11px 16px;
+  border-top: 1px solid var(--line);
+}
+figure.fig figcaption b { color: var(--text-dim); font-weight: 500; }
+
+/* paired figures, side by side */
+.fig-2up {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 26px 0;
+}
+.fig-2up figure.fig { margin: 0; }
+
 /* key-figure metric row */
 .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin: 22px 0; }
 .metric {
@@ -220,4 +254,5 @@ table.res .best td:first-child { color: var(--text); font-weight: 600; }
 @media (max-width: 720px) {
   .meta { gap: 20px 28px; }
   .doc-hero { padding: 48px 0 32px; }
+  .fig-2up { grid-template-columns: 1fr; }
 }

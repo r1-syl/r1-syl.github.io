@@ -83,6 +83,16 @@
       space — were prototyped and benchmarked, but the leaner CLAHE → colour → texture → tiling stack is
       what carried into the final pipeline.
     </p>
+    <figure class="fig">
+      <img src="figures/machine-vision/clahe_brightness.png"
+           alt="L-channel brightness histogram before and after CLAHE with Gaussian fits" loading="lazy" />
+      <figcaption><b>CLAHE brightness equalisation.</b> L-channel pixel distribution before (blue) and after (orange) CLAHE: the mean lifts from μ = 113.8 to 132.9 and the histogram spreads toward the highlights, evening out orchard lighting before any detection.</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="figures/machine-vision/hsv_segmentation.png"
+           alt="Original orchard image beside its HSV-masked version with the sky background removed" loading="lazy" />
+      <figcaption><b>HSV colour masking.</b> Original (left) vs. the HSV-masked image (right): the green/red apple ranges isolate the vegetation-and-fruit region and drop the bright sky background, narrowing where the detector has to look. (The figure's in-notebook title reads "HSV Segmentation".)</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
@@ -119,6 +129,18 @@
       86.59% <em>while keeping</em> the high recall — the best of both. On the close-range image, version 5
       reached a perfect 11/11 with no false positives.
     </p>
+    <div class="fig-2up">
+      <figure class="fig">
+        <img src="figures/machine-vision/v5_closerange.png"
+             alt="Version 5 detections versus ground truth on the close-range image, 11 predicted and 11 actual" loading="lazy" />
+        <figcaption><b>V5 — close range.</b> Predicted boxes (left) vs. ground truth (right): 11 predicted, 11 actual — a perfect match on the close-range image.</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="figures/machine-vision/v5_farrange.png"
+             alt="Version 5 detections versus ground truth on the far-range image, 71 predicted and 66 actual" loading="lazy" />
+        <figcaption><b>V5 — far range.</b> The harder case: 71 predicted vs. 66 ground-truth apples. Dense, small, overlapping fruit is where the residual count error remains.</figcaption>
+      </figure>
+    </div>
     <p class="note">
       Metric: per-detection IoU matching (Jaccard, threshold 0.2) against hand-labelled boxes; counts and
       confusion-matrix figures are computed in the notebook, not asserted.

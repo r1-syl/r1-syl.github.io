@@ -61,7 +61,7 @@
     <ul class="tasks">
       <li><span class="n">1</span><span><b>Supervised.</b> Classify 80×80 sprite tiles into their entity class — a CNN versus a KNN built on HOG features.</span></li>
       <li><span class="n">2</span><span><b>Unsupervised.</b> Cluster entities from a feature table — K-Means versus agglomerative hierarchical clustering.</span></li>
-      <li><span class="n">3</span><span><b>Reinforcement.</b> Learn a navigation policy on a 10×10 dungeon maze — Q-Learning versus SARSA.</span></li>
+      <li><span class="n">3</span><span><b>Reinforcement.</b> Learn a navigation policy on an 8×8 dungeon maze — Q-Learning versus SARSA.</span></li>
     </ul>
     <p class="note">Reproducibility: RANDOM_SEED = 42 throughout; the raw sensor log (dungeon_sensorstats.csv) is treated as read-only and never overwritten.</p>
   </section>
@@ -92,6 +92,11 @@
       error patterns differ significantly, and <strong>expected calibration error (ECE)</strong> to ask
       whether the CNN's confidence scores are trustworthy, not just its top-1 labels.
     </p>
+    <figure class="fig">
+      <img src="figures/herobot/task1_image_hog_confusion.png"
+           alt="Confusion matrix of the KNN-on-HOG classifier across five dungeon entity classes" loading="lazy" />
+      <figcaption><b>KNN + HOG confusion matrix.</b> The hand-engineered Algorithm B route on five entity classes (halfling, human, lizard, orc, wingedrat): a strongly diagonal matrix with per-class recall of 0.91–0.98, confirming HOG descriptors alone separate the sprite types well.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
@@ -109,13 +114,18 @@
       assessed <strong>cluster stability</strong> across resamples to check that the discovered groups are
       real structure and not an artefact of one particular split.
     </p>
+    <figure class="fig">
+      <img src="figures/herobot/task2_kmeans_pca.png"
+           alt="K-Means clusters projected onto the first two principal components" loading="lazy" />
+      <figcaption><b>K-Means clusters in PCA space.</b> The entity feature table projected onto its first two principal components (PC1 54.1%, PC2 16.5% of variance) with the K-Means assignment colour-coded — a 2-D view of the recovered grouping, not the full-dimensional clustering itself.</figcaption>
+    </figure>
   </section>
 
   <section class="reveal">
     <div class="sec-num">04 / Reinforcement</div>
     <h2>Acting in the world: maze navigation</h2>
     <p>
-      The final part puts the agent in a 10×10 dungeon maze and asks it to learn a path to the goal from
+      The final part puts the agent in an 8×8 dungeon maze and asks it to learn a path to the goal from
       reward alone. I implemented two tabular temporal-difference learners:
     </p>
     <div class="tbl-wrap">
@@ -135,6 +145,23 @@
       up exactly where theory predicts: SARSA's learned route keeps a safer margin from penalty tiles, while
       Q-Learning's takes the shorter, riskier line.
     </p>
+    <figure class="fig">
+      <img src="figures/herobot/task3_maze_layout.png"
+           alt="8x8 dungeon maze layout with start and goal cells marked" loading="lazy" />
+      <figcaption><b>DungeonMazeWorld layout.</b> The 8×8 grid the agent learns on (seed 124), with the start cell S and goal cell G — the fixed environment both learners are trained and compared on.</figcaption>
+    </figure>
+    <div class="fig-2up">
+      <figure class="fig">
+        <img src="figures/herobot/task3_ql_policy_grid.png"
+             alt="Q-Learning greedy policy shown as arrows per cell, split by agent heading" loading="lazy" />
+        <figcaption><b>Q-Learning policy.</b> The greedy action per cell, shown separately for each of the four headings (facing N/E/S/W) since the state includes orientation.</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="figures/herobot/task3_sarsa_policy_grid.png"
+             alt="SARSA greedy policy shown as arrows per cell, split by agent heading" loading="lazy" />
+        <figcaption><b>SARSA policy.</b> The on-policy counterpart over the same maze and headings — directly comparable to the Q-Learning grid on the left.</figcaption>
+      </figure>
+    </div>
   </section>
 
   <section class="reveal">
