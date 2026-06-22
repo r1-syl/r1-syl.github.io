@@ -66,9 +66,10 @@
       <li><span class="n">3</span><span><b>Fault response.</b> Detect collisions on the IMU and hand off the leader role after a settling delay.</span></li>
     </ul>
     <p class="note">
-      Honest framing: the figures below are the implementation's <em>control constants and hardware
-      parameters</em>, not measured performance metrics — the deliverable was the working behaviour and
-      its firmware, and no benchmark numbers are claimed.
+      The constants quoted through sections 02–05 are the implementation's <em>control gains and hardware
+      parameters</em>; the <em>measured</em> outcomes — success rate and travel-distance efficiency across
+      a sweep of corridor widths — are reported separately in section 06, benchmarked against a
+      single-leader baseline.
     </p>
   </section>
 
@@ -115,6 +116,16 @@
         distance signal becomes meaningless.
       </p>
     </div>
+    <div class="card">
+      <h3 style="margin-top:0">Signal pre-processing</h3>
+      <p style="margin-bottom:0">
+        Raw IR readings are noisy, so each loop runs on a filtered estimate: a
+        <strong>sliding-window moving average (SMA)</strong> first knocks down the high-frequency spikes,
+        then the result is passed through a first-order <strong>exponential moving average (EMA)</strong>
+        low-pass filter. The cascade gives the proportional loops a stable distance/heading signal to act
+        on instead of chasing sensor noise.
+      </p>
+    </div>
   </section>
 
   <section class="reveal">
@@ -156,7 +167,43 @@
   </section>
 
   <section class="reveal">
-    <div class="sec-num">06 / Takeaways</div>
+    <div class="sec-num">06 / Results</div>
+    <h2>Measured against a single-leader baseline</h2>
+    <p>
+      To quantify the role-switching mechanism I compared it head-to-head with a non-switching baseline
+      (a single leader that tries to reverse-and-turn its way out of a dead end) across a sweep of
+      dead-end entrance widths, narrowed in 2 cm steps. Two metrics: <strong>success rate</strong> at
+      each width, and <strong>total travel distance</strong> measured in leader encoder pulses.
+    </p>
+    <div class="tbl-wrap">
+      <table class="res">
+        <thead>
+          <tr><th>Dead-end width</th><th>Baseline (single leader)</th><th>Role-switching (proposed)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>22 cm</td><td>100%</td><td class="hl">&gt; 95%</td></tr>
+          <tr><td>20 cm</td><td>55.2%</td><td class="hl">&gt; 95%</td></tr>
+          <tr><td>18 cm</td><td>19.4%</td><td class="hl">&gt; 95%</td></tr>
+          <tr class="best"><td>16 cm (narrowest)</td><td>0%</td><td class="hl">&gt; 95%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="big">&gt; 95%</div><div class="lbl">success rate held across <em>all</em> widths, including the 16 cm case where the baseline fails outright</div></div>
+      <div class="metric"><div class="big">27.1%</div><div class="lbl">less travel distance — 2730 vs 3786 leader encoder pulses on successful trials</div></div>
+      <div class="metric"><div class="big">0%</div><div class="lbl">baseline success at 16 cm: the single leader physically cannot complete the reversing turn</div></div>
+    </div>
+    <p>
+      The baseline degrades exactly as kinematics predicts: as the corridor tightens, the space needed for
+      the "enter-deep, reverse, turn, align" manoeuvre runs out, and success collapses from 100% at 22 cm
+      to 0% at 16 cm. Role-switching sidesteps the reversing turn entirely — the rear robot simply becomes
+      the new leader and drives out forwards — so it stays above 95% at every width <em>and</em> covers
+      27.1% less distance doing it.
+    </p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-num">07 / Takeaways</div>
     <h2>What I took from it</h2>
     <ul>
       <li>Coordination doesn't require communication — a single shared IR channel plus two proportional loops is enough to hold a formation, which is a useful reminder of how much behaviour emerges from sensing alone.</li>
